@@ -29,8 +29,20 @@ An optional capability pack the router and playbooks may use when present.
 _Avoid_: plugin, extension, addon, skill (too broad)
 
 **capability**:
-A named slot a module may provide, such as `validation.judge`. The router and playbooks call a capability, never a module by name.
+A named slot a module may provide, such as `validation.judge`. Router and playbooks call it through the capability registry, never a module by name.
 _Avoid_: tool, hook, provider (when naming the slot itself)
+
+**provider**:
+The implementation a module supplies for a capability. Distinct from the capability (the slot) and from the module (the pack that may supply one or more providers).
+_Avoid_: plugin, backend, driver; using the provider's product name as the slot name
+
+**capability registry**:
+The computed bind of capabilities to at most one live provider each. Router and playbooks call a capability through it; they never name a module or provider.
+_Avoid_: plugin marketplace, service catalog
+
+**pin**:
+A per-host map from capability name to module id that selects among multiple providers of the same capability.
+_Avoid_: model version, API base URL (those are provider config)
 
 **router**:
 The mode skill that classifies an unscoped request as Matt HITL or a pstack playbook. Explicit skills and named playbooks skip it.
