@@ -8,10 +8,11 @@ mainart-stack's **router** is the unscoped front door onto Matt HITL or a pstack
 - **Reclassify explicit invocations vs honor them (chosen).** The router is the unscoped entry; a typed skill is already a classification.
 - **Binding `validation.judge` vs advisory (chosen).** A confidence floor would make a missing module a behavior change.
 - **`/implement` unused vs dual path vs packet runner wrapping playbooks (chosen).** Specified execution is playbooks; `/implement` / `/implement-spec` pick up packets and match. Unsettled pickup bounces to Matt HITL.
-- **implement-spec workers as poteto-agent vs playbook runners (chosen).** pstack's split stands: the worker runs the playbook; `poteto-agent` is the in-step delegate. Host `subagent_type` binds in the host-adapter ticket.
+- **implement-spec workers as poteto-agent vs playbook runners (chosen).** pstack's split stands: the worker *prompt* is **playbook-runner**; `poteto-agent` is the in-step delegate. Hosting binds in ADR-0004: Grok is depth-1 (the router / implement-spec session loads playbook-runner in-process); Claude/Codex adapters may nest.
 
 ## Consequences
 
 - A **product fork** leaves the playbook: grill as necessary, then Matt `prototype` when the remainder is empirical. Empirical **engineering choice** uses pstack's Prototype playbook. After bounce, reclassify; do not blindly resume the old todo list.
 - Investigation is factual how/why-built. "Should we" is Matt HITL. That is the only match-rule patch; the rest of pstack's table is inherited until which playbooks enter core is decided.
 - The router and playbooks call `validation.judge`, never Jev. Closed questions: settled-what vs not, product-fork vs engineering, which playbook.
+- On Grok, implement-spec fan-out uses the overnight / workflow binding, not nested `spawn-worker`. See ADR-0004.

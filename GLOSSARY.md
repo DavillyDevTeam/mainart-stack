@@ -24,6 +24,18 @@ _Avoid_: plugin, runtime
 The runtime glue for one agent host (Grok Build, Claude Code, or Codex).
 _Avoid_: port, binding
 
+**host operation**:
+A host-agnostic operation core may request: spawn, persist model roles, overnight, UI proof, install/setup. Each host adapter binds it. Distinct from a capability, which is an optional module slot.
+_Avoid_: port, capability (when naming required runtime work)
+
+**model role**:
+A named quality/speed slot core uses when spawning or persisting models: `xhigh`, `max`, or `fast`. A host adapter maps each slot to a host model id.
+_Avoid_: using a host model id as the slot name
+
+**playbook-runner**:
+The core agent that executes a matched playbook as an implement-spec worker.
+_Avoid_: poteto-agent (that is the in-step code-writing delegate)
+
 **module**:
 An optional capability pack the router and playbooks may use when present.
 _Avoid_: plugin, extension, addon, skill (too broad)
