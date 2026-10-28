@@ -60,6 +60,10 @@ _Avoid_: model version, API base URL (those are provider config)
 The mode skill that classifies an unscoped request as Matt HITL or a pstack playbook. Explicit skills and named playbooks skip it.
 _Avoid_: poteto-mode (upstream name, unless as an alias)
 
+**packet chain**:
+The Matt skills vendored into core that turn an underspecified idea into packets and then implement them.
+_Avoid_: ask-matt (Matt's router; this product's router replaces it)
+
 **packet**:
 A Matt tracker ticket: a spec or an implementable slice with acceptance criteria.
 _Avoid_: issue (generic), task, work item
