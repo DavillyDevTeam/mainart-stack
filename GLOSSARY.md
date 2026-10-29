@@ -20,6 +20,10 @@ _Avoid_: overlay, patch, using this tree as the shipped plugin
 The host-agnostic skills, playbooks, and agent prompts.
 _Avoid_: plugin, runtime
 
+**pstack core copy**:
+A pstack skill, playbook, or agent that ships in core as a rewritten copy of the matching vendor-tree path. Distinct from vendor-only pstack paths and from new core files that have no vendor pair.
+_Avoid_: overlay (the pull recipe), vendor file (when meaning the shipped copy)
+
 **host adapter**:
 The runtime glue for one agent host (Grok Build, Claude Code, or Codex).
 _Avoid_: port, binding
