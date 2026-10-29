@@ -61,8 +61,8 @@ A per-host map from capability name to module id that selects among multiple pro
 _Avoid_: model version, API base URL (those are provider config)
 
 **router**:
-The mode skill that classifies an unscoped request as Matt HITL or a pstack playbook. Explicit skills and named playbooks skip it.
-_Avoid_: poteto-mode (upstream name, unless as an alias)
+The mode skill that classifies an unscoped request as Matt HITL or a pstack playbook. Explicit skills and named playbooks skip it. Canonical invocation is `mstack`; `poteto-mode` is an alias.
+_Avoid_: poteto-mode as the canonical slash, mainart, router (as a slash name)
 
 **packet chain**:
 The Matt skills vendored into core that turn an underspecified idea into packets and then implement them.
