@@ -1,0 +1,29 @@
+{
+  "directory": "poteto-mode",
+  "canonical_token": "mstack",
+  "aliases": ["poteto-mode"],
+  "hitl_entry": "grill-with-docs",
+  "explicit_hitl": [
+    "grill-with-docs",
+    "grill-me",
+    "wayfinder",
+    "triage",
+    "to-spec",
+    "to-tickets"
+  ],
+  "principles": {
+    "apply_during": "playbook",
+    "can_suppress_hitl": false
+  },
+  "judge": {
+    "required": false,
+    "overrides_explicit": false,
+    "overrides_unscoped_gate": false
+  },
+  "playbooks": [
+    {
+      "name": "bug-fix",
+      "match": "reported-defect"
+    }
+  ]
+}
