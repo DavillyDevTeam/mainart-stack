@@ -11,6 +11,9 @@
     "to-spec",
     "to-tickets"
   ],
+  "settled_what": {
+    "signals": ["data_shape", "repro", "metric", "acceptance"]
+  },
   "principles": {
     "apply_during": "playbook",
     "can_suppress_hitl": false

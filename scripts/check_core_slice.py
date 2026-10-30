@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from hosts.grok.session import agreement_problems
+from scripts.slice_agreement import agreement_problems
 
 FORBIDDEN: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"spawn_subagent"), "spawn_subagent"),
@@ -102,6 +102,23 @@ SLICE_SKILLS = (
     "poteto-help",
     "correct",
 )
+
+FENCE_FILES = (
+    "skills/poteto-mode/SKILL.md",
+    "skills/figure-it-out/SKILL.md",
+    "skills/poteto-help/SKILL.md",
+    "skills/correct/SKILL.md",
+    "skills/no-comments/SKILL.md",
+    "agents/playbook-runner.md",
+    "skills/principle-never-block-on-the-human/SKILL.md",
+)
+
+SIGNAL_PROSE = {
+    "data_shape": "data shape",
+    "repro": "repro",
+    "metric": "metric",
+    "acceptance": "acceptance",
+}
 
 
 def forbidden_hits(text: str) -> list[str]:
@@ -214,8 +231,82 @@ def violations(root: Path) -> list[str]:
         if "skills/tdd" in lowered or 'skill tool with "tdd"' in lowered:
             problems.append("bug-fix invokes Matt tdd")
 
+    problems.extend(slice_copy_problems(core, vendor))
+    problems.extend(procedure_alignment_problems(core))
     problems.extend(_agreement_problems(root, core))
     problems.extend(_license_problems(core))
+    return problems
+
+
+def _skill_name(text: str) -> str | None:
+    if not text.startswith("---\n"):
+        return None
+    end = text.find("\n---", 4)
+    if end == -1:
+        return None
+    for line in text[4:end].splitlines():
+        if line.startswith("name:"):
+            return line.split(":", 1)[1].strip()
+    return None
+
+
+def slice_copy_problems(core: Path, vendor: Path) -> list[str]:
+    """A slice skill keeps every vendor sibling, rewritten rather than copied raw."""
+
+    problems: list[str] = []
+    for skill in SLICE_SKILLS:
+        vendor_root = vendor / "skills" / skill
+        if not vendor_root.is_dir():
+            continue
+        for path in sorted(vendor_root.rglob("*")):
+            if not path.is_file():
+                continue
+            relative = path.relative_to(vendor).as_posix()
+            if (
+                relative.startswith(VENDOR_ONLY_PREFIXES)
+                or relative in VENDOR_ONLY_FILES
+            ):
+                continue
+            core_file = core / relative
+            if not core_file.is_file():
+                problems.append(f"missing same-relative-path core copy: {relative}")
+                continue
+            if core_file.read_bytes() == path.read_bytes():
+                problems.append(f"core copy is not rewritten: {relative}")
+            vendor_name = _skill_name(path.read_text())
+            core_name = _skill_name(core_file.read_text())
+            if vendor_name is not None and vendor_name != core_name:
+                problems.append(f"core copy renamed the skill: {relative}")
+    return problems
+
+
+def procedure_alignment_problems(core: Path) -> list[str]:
+    """Prose that restates the policy must keep the policy's words."""
+
+    problems: list[str] = []
+    router_path = core / "skills" / "poteto-mode" / "SKILL.md"
+    if router_path.is_file():
+        router = router_path.read_text().lower()
+        for phrase in SIGNAL_PROSE.values():
+            if phrase not in router:
+                problems.append(f"router prose dropped the settled signal {phrase}")
+    for relative in (
+        "skills/poteto-mode/playbooks/bug-fix.md",
+        "agents/playbook-runner.md",
+    ):
+        path = core / relative
+        if not path.is_file():
+            continue
+        text = path.read_text().lower()
+        if (
+            "cheap failing-test-first" not in text
+            or "impractical or expensive" not in text
+        ):
+            problems.append(f"{relative} drifted from the bug-fix testing contract")
+    for relative in FENCE_FILES:
+        path = core / relative
+        if not path.is_file() or "must not suppress" not in path.read_text():
+            problems.append(f"{relative} dropped the HITL fence")
     return problems
 
 

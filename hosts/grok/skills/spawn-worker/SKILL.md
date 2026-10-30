@@ -11,7 +11,7 @@ Request:
 
 - role: a name from core/agents
 - prompt: the worker brief
-- isolation: isolated or same-tree. Omitted isolation means same-tree. The coordinator maps isolated to host placement `worktree` and same-tree to `same-tree`, and records that placement on the spawn handle. This session does not create the git worktree.
+- isolation: isolated or same-tree. Omitted isolation means same-tree. The coordinator records native isolation `worktree` for isolated, which is the git worktree isolation the native spawn uses, and `none` for same-tree. It also records host placement `worktree` or `same-tree` on the spawn handle.
 - model_role: optional xhigh, max, or fast. The coordinator maps that opaque role to the configuration key `[subagents.roles.<role>].model` and records the key on the spawn handle. It does not write host configuration and does not store a host model id.
 
 Grok rules for this path:

@@ -7,9 +7,20 @@ description: Explain the mainart-stack router, the bug-fix path, and the skills 
 
 The product is mainart-stack. pstack names the upstream playbook source, not this product.
 
-Answer a help question from the files in core. Do not start the work. Read the file you route to before you quote it.
+Answer a help question from the files in core. Do not start the work. Read the file you route to before you quote it, and trust that file when it disagrees with this map.
 
 A message that asks for the work itself, such as "fix this save bug", is not a help question. The router skill poteto-mode owns that request.
+
+## Find out what they need
+
+Infer the need from the message. If it is still unclear, ask one question with these options, then answer only the section they pick:
+
+- How an unscoped request is classified
+- How bug-fix runs
+- Which included skill fits a situation
+- How to word the prompt
+
+Word a prompt from [`references/prompting.md`](references/prompting.md). Example prompts are in [`references/recipes.md`](references/recipes.md). Skills that are not in core are not on this slice. Do not invent a route to one.
 
 ## Tokens
 
@@ -44,4 +55,4 @@ Use bug-fix for a reported defect to reproduce, root-cause, and fix with runtime
 
 ## Reply
 
-Lead with the answer. Name the core file the answer came from. Keep it short unless the person asked for the whole map.
+Lead with the answer. Give at most one example prompt, adapted from [`references/recipes.md`](references/recipes.md) when one fits, then the core file the answer came from. Keep it short unless the person asked for the whole map.

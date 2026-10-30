@@ -12,6 +12,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, TypedDict, cast
 
+from scripts.slice_agreement import (
+    CHEAP_FAILING_TEST_FIRST,
+    GOAL_CONTINUATION_CAP,
+    IMPRACTICAL_OR_EXPENSIVE,
+    SETTLED_SIGNALS,
+    agreement_problems,
+)
+
 ROOT = Path(__file__).resolve().parents[2]
 INVOCATION_PATH = Path(__file__).with_name("invocation.json")
 POLICY_PATH = ROOT / "core/skills/poteto-mode/router-policy.json"
@@ -24,17 +32,19 @@ Isolation = Literal["isolated", "same-tree"]
 TestingCadence = Literal["cheap-failing-test-first"]
 TestingException = Literal["impractical-or-expensive"]
 HostPlacement = Literal["worktree", "same-tree"]
+NativeIsolation = Literal["worktree", "none"]
 Workflow = Literal["hitl", "playbook"]
+OvernightDriver = Literal["/goal", "/loop"]
 
 MODEL_ROLES = frozenset({"xhigh", "max", "fast"})
 ISOLATIONS = frozenset({"isolated", "same-tree"})
-CHEAP_FAILING_TEST_FIRST: TestingCadence = "cheap-failing-test-first"
-IMPRACTICAL_OR_EXPENSIVE: TestingException = "impractical-or-expensive"
 
 
 @dataclass(frozen=True)
 class OvernightRequest:
     mode: Literal["until", "every"]
+    driver: OvernightDriver
+    continuation_cap: int | None
     done: str | None = None
     interval: str | None = None
     prompt: str | None = None
@@ -71,8 +81,8 @@ class Prompt:
     @property
     def settled(self) -> bool:
         return any(
-            isinstance(value, str) and value.strip()
-            for value in (self.data_shape, self.repro, self.metric, self.acceptance)
+            isinstance(getattr(self, name), str) and getattr(self, name).strip()
+            for name in SETTLED_SIGNALS
         )
 
 
@@ -117,6 +127,7 @@ class SpawnHandle:
     model_role: ModelRole | None
     depth: int
     placement: HostPlacement
+    native_isolation: NativeIsolation
     model_config_key: str | None
 
     def spawn_worker(
@@ -162,12 +173,17 @@ class JudgePolicy(TypedDict):
     overrides_unscoped_gate: bool
 
 
+class SettledWhatPolicy(TypedDict):
+    signals: list[str]
+
+
 class RouterPolicy(TypedDict):
     directory: str
     canonical_token: str
     aliases: list[str]
     hitl_entry: str
     explicit_hitl: list[str]
+    settled_what: SettledWhatPolicy
     principles: PrinciplesPolicy
     judge: JudgePolicy
     playbooks: list[PlaybookEntry]
@@ -227,6 +243,7 @@ class GrokCoordinator:
         self._bugfix_policy = bugfix
         self.runner: str | None = None
         self.adopted_in_session = False
+        self._outcome: Decision | None = None
         self._spawns: list[SpawnHandle] = []
         self._overnights: list[OvernightRequest] = []
 
@@ -295,26 +312,33 @@ class GrokCoordinator:
             raise ValueError("empty playbook advice")
         if explicit is not None:
             if explicit in self._policy["explicit_hitl"]:
-                return self._decision("hitl", explicit, advice)
+                return self._remember(self._decision("hitl", explicit, advice))
             included = self._included(explicit)
             if included is not None:
-                return self._decision(
+                return self._remember(
+                    self._decision(
+                        "playbook",
+                        explicit,
+                        advice,
+                        creates_packet=bool(self._bugfix()["requires_packet"]),
+                    )
+                )
+            raise UnknownInvocation(explicit)
+        if self._settled(prompt) and prompt.reported_defect and self._matches_bug_fix():
+            return self._remember(
+                self._decision(
                     "playbook",
-                    explicit,
+                    "bug-fix",
                     advice,
                     creates_packet=bool(self._bugfix()["requires_packet"]),
                 )
-            raise UnknownInvocation(explicit)
-        if prompt.settled and prompt.reported_defect and self._matches_bug_fix():
-            return self._decision(
-                "playbook",
-                "bug-fix",
-                advice,
-                creates_packet=bool(self._bugfix()["requires_packet"]),
             )
-        return self._decision("hitl", str(self._policy["hitl_entry"]), advice)
+        return self._remember(
+            self._decision("hitl", str(self._policy["hitl_entry"]), advice)
+        )
 
     def begin(self, decision: Decision) -> PlaybookRun:
+        self._hold_for_clarification()
         if decision.waits_for_clarification or decision.workflow != "playbook":
             raise ClarificationRequired(decision.name)
         bug = self._bugfix()
@@ -348,6 +372,7 @@ class GrokCoordinator:
         isolation: Isolation | None = None,
         model_role: ModelRole | None = None,
     ) -> SpawnHandle:
+        self._hold_for_clarification()
         if not prompt.strip():
             raise ValueError("prompt is required")
         chosen = _isolation(isolation)
@@ -371,8 +396,9 @@ class GrokCoordinator:
         interval: str | None = None,
         prompt: str | None = None,
     ) -> OvernightRequest:
-        """Record an overnight request. The modes stay distinct, and neither resumes after process death."""
+        """Record an overnight request. until is /goal with a cap; every is /loop."""
 
+        self._hold_for_clarification()
         if mode == "until":
             if (
                 not isinstance(done, str)
@@ -381,7 +407,12 @@ class GrokCoordinator:
                 or prompt is not None
             ):
                 raise ValueError("until carries a done condition and nothing else")
-            request = OvernightRequest(mode="until", done=done)
+            request = OvernightRequest(
+                mode="until",
+                driver="/goal",
+                continuation_cap=GOAL_CONTINUATION_CAP,
+                done=done,
+            )
         elif mode == "every":
             if (
                 done is not None
@@ -391,7 +422,13 @@ class GrokCoordinator:
                 or not prompt.strip()
             ):
                 raise ValueError("every carries an interval and a prompt")
-            request = OvernightRequest(mode="every", interval=interval, prompt=prompt)
+            request = OvernightRequest(
+                mode="every",
+                driver="/loop",
+                continuation_cap=None,
+                interval=interval,
+                prompt=prompt,
+            )
         else:
             raise ValueError(mode)
         self._overnights.append(request)
@@ -446,8 +483,24 @@ class GrokCoordinator:
             model_role=model_role,
             depth=depth,
             placement=_placement(isolation),
+            native_isolation=_native_isolation(isolation),
             model_config_key=_model_config_key(model_role),
         )
+
+    def _settled(self, prompt: Prompt) -> bool:
+        return any(
+            isinstance(getattr(prompt, name, None), str)
+            and bool(getattr(prompt, name).strip())
+            for name in self._policy["settled_what"]["signals"]
+        )
+
+    def _remember(self, decision: Decision) -> Decision:
+        self._outcome = decision
+        return decision
+
+    def _hold_for_clarification(self) -> None:
+        if self._outcome is not None and self._outcome.waits_for_clarification:
+            raise ClarificationRequired(self._outcome.name)
 
 
 def _isolation(value: str | None) -> Isolation:
@@ -472,6 +525,12 @@ def _placement(isolation: Isolation) -> HostPlacement:
     return "same-tree"
 
 
+def _native_isolation(isolation: Isolation) -> NativeIsolation:
+    if isolation == "isolated":
+        return "worktree"
+    return "none"
+
+
 def _model_config_key(model_role: ModelRole | None) -> str | None:
     if model_role is None:
         return None
@@ -484,70 +543,3 @@ def _judge_disagreed(advice: JudgeAdvice, workflow: Workflow, name: str) -> bool
     workflow_differs = advice.workflow is not None and advice.workflow != workflow
     playbook_differs = advice.playbook is not None and advice.playbook != name
     return workflow_differs or playbook_differs
-
-
-def _section(data: Mapping[str, object], key: str) -> Mapping[str, object]:
-    value = data.get(key)
-    if isinstance(value, dict):
-        return cast(Mapping[str, object], value)
-    return {}
-
-
-def agreement_problems(
-    policy: Mapping[str, object],
-    invocation: Mapping[str, object],
-    bugfix: Mapping[str, object],
-) -> list[str]:
-    """Shared fail-closed gate for the session and the core-slice check."""
-
-    problems: list[str] = []
-    if policy.get("canonical_token") != "mstack" or policy.get("aliases") != [
-        "poteto-mode"
-    ]:
-        problems.append(
-            "router policy tokens are not mstack plus the poteto-mode alias"
-        )
-    if policy.get("directory") != "poteto-mode":
-        problems.append("router directory must stay poteto-mode")
-    principles = _section(policy, "principles")
-    if (
-        principles.get("apply_during") != "playbook"
-        or principles.get("can_suppress_hitl") is not False
-    ):
-        problems.append("principles are not scoped to the playbook phase")
-    judge = _section(policy, "judge")
-    if (
-        judge.get("required") is not False
-        or judge.get("overrides_explicit") is not False
-        or judge.get("overrides_unscoped_gate") is not False
-    ):
-        problems.append("validation.judge is a gate in the router policy")
-    if invocation.get("plugin_id") != "mainart-stack":
-        problems.append("Grok plugin identity is not mainart-stack")
-    if invocation.get("canonical_token") != policy.get("canonical_token"):
-        problems.append("Grok canonical token drifted from the core router")
-    if invocation.get("aliases") != policy.get("aliases"):
-        problems.append("Grok aliases drifted from the core router")
-    if invocation.get("core_skill") != "poteto-mode":
-        problems.append("Grok tokens do not open poteto-mode")
-    if invocation.get("implicit_invocation") is not False:
-        problems.append("Grok router allows implicit invocation")
-    runner = _section(invocation, "runner")
-    if (
-        runner.get("role") != "playbook-runner"
-        or runner.get("placement") != "in-session"
-    ):
-        problems.append("Grok does not adopt playbook-runner in-session")
-    if invocation.get("nested_spawn_worker") is not False:
-        problems.append("Grok permits nested spawn-worker")
-    testing = _section(bugfix, "testing")
-    if testing.get("cadence") != CHEAP_FAILING_TEST_FIRST:
-        problems.append("bug-fix lost cheap failing-test-first")
-    if testing.get("exception") != IMPRACTICAL_OR_EXPENSIVE:
-        problems.append("bug-fix lost the impractical or expensive test exception")
-    if (
-        testing.get("invokes_skill") is not None
-        or bugfix.get("requires_packet") is not False
-    ):
-        problems.append("bug-fix calls Matt tdd or requires a tracker packet")
-    return problems

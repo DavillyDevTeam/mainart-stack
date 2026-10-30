@@ -212,6 +212,7 @@ class RouterBoundaryTest(unittest.TestCase):
         self.assertEqual(adopted.kind, "adopted")
         self.assertEqual(adopted.role, "playbook-runner")
         self.assertEqual(adopted.placement, "same-tree")
+        self.assertEqual(adopted.native_isolation, "none")
         self.assertIsNone(adopted.model_config_key)
         self.assertEqual(session.spawned_roles, ())
         self.assertTrue(session.adopted_in_session)
@@ -224,6 +225,7 @@ class RouterBoundaryTest(unittest.TestCase):
         self.assertEqual(worker.native_type, "mainart-stack:poteto-agent")
         self.assertEqual(worker.isolation, "same-tree")
         self.assertEqual(worker.placement, "same-tree")
+        self.assertEqual(worker.native_isolation, "none")
         self.assertIsNone(worker.model_role)
         self.assertIsNone(worker.model_config_key)
         self.assertEqual(worker.depth, 1)
@@ -247,6 +249,7 @@ class RouterBoundaryTest(unittest.TestCase):
         )
         self.assertEqual(isolated.isolation, "isolated")
         self.assertEqual(isolated.placement, "worktree")
+        self.assertEqual(isolated.native_isolation, "worktree")
         self.assertEqual(isolated.model_role, "fast")
         self.assertEqual(isolated.model_config_key, "[subagents.roles.fast].model")
         self.assertEqual(isolated.native_type, "mainart-stack:comment-sicko")
@@ -260,10 +263,14 @@ class RouterBoundaryTest(unittest.TestCase):
         )
 
         self.assertEqual(until.mode, "until")
+        self.assertEqual(until.driver, "/goal")
+        self.assertEqual(until.continuation_cap, 8)
         self.assertEqual(until.done, "the failing repro is confirmed")
         self.assertIsNone(until.interval)
         self.assertFalse(until.resumes_after_process_death)
         self.assertEqual(every.mode, "every")
+        self.assertEqual(every.driver, "/loop")
+        self.assertIsNone(every.continuation_cap)
         self.assertEqual(every.interval, "1h")
         self.assertEqual(every.prompt, "recheck the repro")
         self.assertIsNone(every.done)
@@ -272,6 +279,27 @@ class RouterBoundaryTest(unittest.TestCase):
             session.overnight(mode="until", done="done", interval="1h")
         with self.assertRaises(ValueError):
             session.overnight(mode="every", interval="1h")
+
+    def test_hitl_holds_spawn_and_overnight_until_a_playbook_is_chosen(self) -> None:
+        session = GrokCoordinator.open("mstack")
+        waiting = session.route(UNSETTLED)
+
+        self.assertTrue(waiting.waits_for_clarification)
+        with self.assertRaises(ClarificationRequired):
+            session.spawn_worker("poteto-agent", "start coding")
+        with self.assertRaises(ClarificationRequired):
+            session.overnight(mode="until", done="the repro is confirmed")
+        self.assertEqual(session.spawned_roles, ())
+        self.assertIsNone(session.runner)
+
+        decision = session.route(UNSETTLED, explicit="bug-fix")
+        session.begin(decision)
+        worker = session.spawn_worker("poteto-agent", "land the fix")
+        until = session.overnight(mode="until", done="the repro is confirmed")
+
+        self.assertEqual(worker.kind, "worker")
+        self.assertEqual(until.driver, "/goal")
+        self.assertEqual(until.continuation_cap, 8)
 
 
 if __name__ == "__main__":

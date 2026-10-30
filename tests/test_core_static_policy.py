@@ -13,8 +13,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from hosts.grok.session import agreement_problems
-from scripts.check_core_slice import forbidden_hits, tdd_collision_problems, violations
+from scripts.check_core_slice import (
+    forbidden_hits,
+    slice_copy_problems,
+    tdd_collision_problems,
+    violations,
+)
+from scripts.slice_agreement import agreement_problems
 
 
 class CoreStaticPolicyTest(unittest.TestCase):
@@ -27,15 +32,26 @@ class CoreStaticPolicyTest(unittest.TestCase):
     def test_slice_check_uses_the_session_agreement_gate(self) -> None:
         source = (ROOT / "scripts" / "check_core_slice.py").read_text()
         session = (ROOT / "hosts" / "grok" / "session.py").read_text()
+        gate = (ROOT / "scripts" / "slice_agreement.py").read_text()
         self.assertIn("agreement_problems", source)
         self.assertNotIn("overrides_unscoped_gate", source)
-        self.assertEqual(session.count("def agreement_problems"), 1)
+        self.assertNotIn("def agreement_problems", session)
+        self.assertIn("slice_agreement", session)
+        self.assertEqual(gate.count("def agreement_problems"), 1)
         self.assertEqual(
             agreement_problems(
                 {
                     "canonical_token": "mstack",
                     "aliases": ["poteto-mode"],
                     "directory": "poteto-mode",
+                    "settled_what": {
+                        "signals": [
+                            "data_shape",
+                            "repro",
+                            "metric",
+                            "acceptance",
+                        ]
+                    },
                     "principles": {
                         "apply_during": "playbook",
                         "can_suppress_hitl": False,
@@ -88,6 +104,42 @@ class CoreStaticPolicyTest(unittest.TestCase):
             self.assertEqual(
                 problems,
                 ["pstack copy occupies packet-chain path: skills/tdd/SKILL.md"],
+            )
+
+    def test_slice_skill_keeps_rewritten_vendor_siblings(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            vendor = root / "vendor"
+            core = root / "core"
+            vendor_skill = vendor / "skills" / "poteto-help"
+            (vendor_skill / "references").mkdir(parents=True)
+            (vendor_skill / "SKILL.md").write_text(
+                "---\nname: poteto-help\n---\nvendor help\n"
+            )
+            (vendor_skill / "references" / "prompting.md").write_text(
+                "vendor prompting\n"
+            )
+            core_skill = core / "skills" / "poteto-help"
+            core_skill.mkdir(parents=True)
+            (core_skill / "SKILL.md").write_text(
+                "---\nname: poteto-help\n---\nrewritten help\n"
+            )
+
+            missing = slice_copy_problems(core, vendor)
+            self.assertIn(
+                "missing same-relative-path core copy: "
+                "skills/poteto-help/references/prompting.md",
+                missing,
+            )
+
+            copied = core_skill / "references"
+            copied.mkdir()
+            (copied / "prompting.md").write_text("vendor prompting\n")
+            raw = slice_copy_problems(core, vendor)
+            self.assertIn(
+                "core copy is not rewritten: "
+                "skills/poteto-help/references/prompting.md",
+                raw,
             )
 
 

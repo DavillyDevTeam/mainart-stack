@@ -7,9 +7,9 @@ description: Grok host-adapter shim for the overnight host operation. until and 
 
 Core asks for this host operation by directory name. Native drivers stay in this adapter.
 
-- mode until carries a done condition. On Grok that is the goal driver, `/goal`. The driver has an eight-continuation cap, so a long condition spans turns. It is not an unlimited budget.
-- mode every carries an interval and a prompt. On Grok that is the durable scheduler, `/loop`.
-- Neither driver resumes after process death. A durable schedule is not a process-recovery guarantee.
+- mode until carries a done condition. The coordinator records driver `/goal` and continuation cap 8. A long condition spans turns inside that cap. It is not an unlimited budget.
+- mode every carries an interval and a prompt. The coordinator records driver `/loop` and no continuation cap.
+- Neither driver resumes after process death. A durable schedule is not a process-recovery guarantee. The request records `resumes_after_process_death` false.
 - Do not add a third mode. Workflow packaging stays inside this adapter.
 
 Bug-fix requests mode until when a hunt is long and the done condition is that the surviving mechanism is confirmed with runtime evidence.
