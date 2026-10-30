@@ -10,19 +10,34 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from typing import cast
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from hosts.grok.session import (
     ClarificationRequired,
+    Decision,
     GrokCoordinator,
     JudgeAdvice,
+    ModelRole,
     NestedSpawnRejected,
     Prompt,
     UnknownInvocation,
     UnknownRole,
 )
+
+
+def _classification(decision: Decision) -> tuple[object, ...]:
+    return (
+        decision.workflow,
+        decision.name,
+        decision.waits_for_clarification,
+        decision.creates_tracker_packet,
+        decision.principles_active,
+        decision.judge_changed_outcome,
+    )
+
 
 ROUTER_DESCRIPTION = (
     "The mode skill that classifies an unscoped request as Matt HITL or a "
@@ -51,6 +66,8 @@ class RouterBoundaryTest(unittest.TestCase):
         self.assertTrue(decision.waits_for_clarification)
         self.assertFalse(decision.principles_active)
         self.assertFalse(decision.creates_tracker_packet)
+        self.assertFalse(decision.judge_disagreed)
+        self.assertFalse(decision.judge_changed_outcome)
         with self.assertRaises(ClarificationRequired):
             session.begin(decision)
         self.assertIsNone(session.runner)
@@ -76,6 +93,7 @@ class RouterBoundaryTest(unittest.TestCase):
         self.assertFalse(decision.creates_tracker_packet)
         self.assertFalse(decision.waits_for_clarification)
         self.assertTrue(decision.principles_active)
+        self.assertFalse(decision.judge_disagreed)
         self.assertFalse(decision.judge_changed_outcome)
 
         run = session.begin(decision)
@@ -117,6 +135,7 @@ class RouterBoundaryTest(unittest.TestCase):
         self.assertEqual(decision.workflow, "hitl")
         self.assertEqual(decision.name, "grill-with-docs")
         self.assertTrue(decision.waits_for_clarification)
+        self.assertTrue(decision.judge_disagreed)
         self.assertFalse(decision.judge_changed_outcome)
         self.assertFalse(decision.principles_active)
 
@@ -129,6 +148,7 @@ class RouterBoundaryTest(unittest.TestCase):
         self.assertEqual(decision.workflow, "playbook")
         self.assertEqual(decision.name, "bug-fix")
         self.assertFalse(decision.waits_for_clarification)
+        self.assertTrue(decision.judge_disagreed)
         self.assertFalse(decision.judge_changed_outcome)
         run = session.begin(decision)
         self.assertEqual(run.testing_cadence, "cheap-failing-test-first")
@@ -152,7 +172,15 @@ class RouterBoundaryTest(unittest.TestCase):
             via_alias = GrokCoordinator.open("poteto-mode").route(
                 prompt, judge=JudgeAdvice(status="answered", workflow="hitl")
             )
-            self.assertEqual(via_canonical, via_alias)
+            self.assertEqual(_classification(via_canonical), _classification(via_alias))
+            self.assertFalse(via_canonical.judge_changed_outcome)
+            self.assertFalse(via_alias.judge_changed_outcome)
+            if prompt.settled and prompt.reported_defect:
+                self.assertFalse(via_canonical.judge_disagreed)
+                self.assertTrue(via_alias.judge_disagreed)
+            else:
+                self.assertFalse(via_canonical.judge_disagreed)
+                self.assertFalse(via_alias.judge_disagreed)
 
     def test_identity_tokens_and_description(self) -> None:
         session = GrokCoordinator.open("mstack")
@@ -183,6 +211,8 @@ class RouterBoundaryTest(unittest.TestCase):
 
         self.assertEqual(adopted.kind, "adopted")
         self.assertEqual(adopted.role, "playbook-runner")
+        self.assertEqual(adopted.placement, "same-tree")
+        self.assertIsNone(adopted.model_config_key)
         self.assertEqual(session.spawned_roles, ())
         self.assertTrue(session.adopted_in_session)
 
@@ -193,6 +223,9 @@ class RouterBoundaryTest(unittest.TestCase):
         self.assertEqual(worker.kind, "worker")
         self.assertEqual(worker.native_type, "mainart-stack:poteto-agent")
         self.assertEqual(worker.isolation, "same-tree")
+        self.assertEqual(worker.placement, "same-tree")
+        self.assertIsNone(worker.model_role)
+        self.assertIsNone(worker.model_config_key)
         self.assertEqual(worker.depth, 1)
         self.assertEqual(session.spawned_roles, ("poteto-agent",))
         with self.assertRaises(NestedSpawnRejected):
@@ -200,7 +233,11 @@ class RouterBoundaryTest(unittest.TestCase):
         with self.assertRaises(UnknownRole):
             session.spawn_worker("generalPurpose", "no")
         with self.assertRaises(ValueError):
-            session.spawn_worker("poteto-agent", "edit", model_role="grok-4.7")
+            session.spawn_worker(
+                "poteto-agent",
+                "edit",
+                model_role=cast(ModelRole, "grok-4.7"),
+            )
 
         isolated = session.spawn_worker(
             "comment-sicko",
@@ -209,7 +246,9 @@ class RouterBoundaryTest(unittest.TestCase):
             model_role="fast",
         )
         self.assertEqual(isolated.isolation, "isolated")
+        self.assertEqual(isolated.placement, "worktree")
         self.assertEqual(isolated.model_role, "fast")
+        self.assertEqual(isolated.model_config_key, "[subagents.roles.fast].model")
         self.assertEqual(isolated.native_type, "mainart-stack:comment-sicko")
 
     def test_overnight_modes_stay_distinct_and_do_not_resume_after_death(self) -> None:

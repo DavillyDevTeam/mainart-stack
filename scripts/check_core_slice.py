@@ -10,6 +10,11 @@ import re
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from hosts.grok.session import agreement_problems
+
 FORBIDDEN: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"spawn_subagent"), "spawn_subagent"),
     (re.compile(r"AskQuestion"), "AskQuestion"),
@@ -209,52 +214,27 @@ def violations(root: Path) -> list[str]:
         if "skills/tdd" in lowered or 'skill tool with "tdd"' in lowered:
             problems.append("bug-fix invokes Matt tdd")
 
-    problems.extend(_policy_problems(core))
+    problems.extend(_agreement_problems(root, core))
     problems.extend(_license_problems(core))
-    problems.extend(_invocation_problems(root, core))
     return problems
 
 
-def _policy_problems(core: Path) -> list[str]:
-    problems: list[str] = []
+def _agreement_problems(root: Path, core: Path) -> list[str]:
+    invocation_path = root / "hosts" / "grok" / "invocation.json"
     policy_path = core / "skills" / "poteto-mode" / "router-policy.json"
     bug_path = core / "skills" / "poteto-mode" / "playbooks" / "bug-fix.policy.json"
-    if not policy_path.is_file() or not bug_path.is_file():
-        return problems
-    policy = json.loads(policy_path.read_text())
-    bug = json.loads(bug_path.read_text())
-    if policy.get("canonical_token") != "mstack" or policy.get("aliases") != [
-        "poteto-mode"
-    ]:
-        problems.append(
-            "router policy tokens are not mstack plus the poteto-mode alias"
-        )
-    if policy.get("directory") != "poteto-mode":
-        problems.append("router directory must stay poteto-mode")
-    principles = policy.get("principles") or {}
-    if (
-        principles.get("apply_during") != "playbook"
-        or principles.get("can_suppress_hitl") is not False
-    ):
-        problems.append("principles are not scoped to the playbook phase")
-    judge = policy.get("judge") or {}
-    if (
-        judge.get("required") is not False
-        or judge.get("overrides_explicit") is not False
-        or judge.get("overrides_unscoped_gate") is not False
-    ):
-        problems.append("validation.judge is a gate in the router policy")
-    testing = bug.get("testing") or {}
-    if testing.get("cadence") != "cheap-failing-test-first":
-        problems.append("bug-fix lost cheap failing-test-first")
-    if testing.get("exception") != "impractical-or-expensive":
-        problems.append("bug-fix lost the impractical or expensive test exception")
-    if (
-        testing.get("invokes_skill") is not None
-        or bug.get("requires_packet") is not False
-    ):
-        problems.append("bug-fix calls Matt tdd or requires a tracker packet")
-    return problems
+    if not invocation_path.is_file() or not policy_path.is_file():
+        return ["missing Grok invocation map"]
+    if not bug_path.is_file():
+        return ["missing bug-fix policy"]
+    loaded = [
+        json.loads(path.read_text())
+        for path in (policy_path, invocation_path, bug_path)
+    ]
+    if not all(isinstance(item, dict) for item in loaded):
+        return ["router agreement inputs must be JSON objects"]
+    policy, invocation, bugfix = loaded
+    return agreement_problems(policy, invocation, bugfix)
 
 
 def _license_problems(core: Path) -> list[str]:
@@ -269,35 +249,6 @@ def _license_problems(core: Path) -> list[str]:
         problems.extend(_notice_problems(matt.read_text(), "Matt Pocock"))
     else:
         problems.append("missing Matt Pocock MIT notice")
-    return problems
-
-
-def _invocation_problems(root: Path, core: Path) -> list[str]:
-    invocation_path = root / "hosts" / "grok" / "invocation.json"
-    policy_path = core / "skills" / "poteto-mode" / "router-policy.json"
-    if not invocation_path.is_file() or not policy_path.is_file():
-        return ["missing Grok invocation map"]
-    invocation = json.loads(invocation_path.read_text())
-    policy = json.loads(policy_path.read_text())
-    problems: list[str] = []
-    if invocation.get("plugin_id") != "mainart-stack":
-        problems.append("Grok plugin identity is not mainart-stack")
-    if invocation.get("canonical_token") != policy.get("canonical_token"):
-        problems.append("Grok canonical token drifted from the core router")
-    if invocation.get("aliases") != policy.get("aliases"):
-        problems.append("Grok aliases drifted from the core router")
-    if invocation.get("core_skill") != "poteto-mode":
-        problems.append("Grok tokens do not open poteto-mode")
-    if invocation.get("implicit_invocation") is not False:
-        problems.append("Grok router allows implicit invocation")
-    runner = invocation.get("runner") or {}
-    if (
-        runner.get("role") != "playbook-runner"
-        or runner.get("placement") != "in-session"
-    ):
-        problems.append("Grok does not adopt playbook-runner in-session")
-    if invocation.get("nested_spawn_worker") is not False:
-        problems.append("Grok permits nested spawn-worker")
     return problems
 
 
