@@ -32,7 +32,7 @@ validation.judge is optional. A missing or disagreeing judge does not block eith
 | Run that playbook | agents/playbook-runner.md, adopted in the coordinator session |
 | Write the code change | agents/poteto-agent.md |
 | Remove comments that do not earn their place | skills/no-comments/SKILL.md |
-| Design a playbook when bug-fix does not fit | skills/figure-it-out/SKILL.md |
+| Design a bespoke run only when the user asks and the what is already settled | skills/figure-it-out/SKILL.md |
 | Stop the repo from repeating one agent mistake | skills/correct/SKILL.md |
 | Explain this surface | skills/poteto-help/SKILL.md |
 

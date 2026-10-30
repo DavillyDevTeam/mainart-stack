@@ -1,6 +1,6 @@
 ---
 name: poteto-mode
-description: The mode skill that classifies an unscoped request as Matt HITL or a pstack playbook. Explicit skills and named playbooks skip it.
+description: The mode skill that classifies an unscoped request as Matt HITL or a pstack playbook. Explicit skills and named playbooks skip it. Canonical invocation is `mstack`; `poteto-mode` is an alias.
 ---
 
 # Router
@@ -26,7 +26,7 @@ Advice from validation.judge is optional. Ask the capability-registry gateway wh
 
 ## Execution
 
-playbook-runner is the worker prompt. poteto-agent is the in-step code-writing delegate. Ask the host adapter to adopt playbook-runner in this coordinator session. Do not spawn a worker to run the playbook. Bug-fix can start without a nested worker.
+playbook-runner is the worker prompt. poteto-agent is the in-step code-writing delegate. The host places playbook-runner. A depth-one host adopts it in this coordinator session instead of spawning it. Do not assume every host rejects a nested worker. Bug-fix can start without one.
 
 Request spawn-worker only for an in-step delegate such as poteto-agent. A worker must not call spawn-worker.
 

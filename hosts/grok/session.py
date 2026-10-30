@@ -22,6 +22,15 @@ MODEL_ROLES = frozenset({"xhigh", "max", "fast"})
 ISOLATIONS = frozenset({"isolated", "same-tree"})
 
 
+@dataclass(frozen=True)
+class OvernightRequest:
+    mode: Literal["until", "every"]
+    done: str | None = None
+    interval: str | None = None
+    prompt: str | None = None
+    resumes_after_process_death: bool = False
+
+
 class ClarificationRequired(Exception):
     """Engineering execution waits until Matt HITL clarifies the request."""
 
@@ -151,7 +160,7 @@ class RouterPolicy(TypedDict):
     playbooks: list[PlaybookEntry]
 
 
-class RunnerBinding(TypedDict):
+class RunnerPlacement(TypedDict):
     role: str
     placement: str
 
@@ -162,7 +171,7 @@ class Invocation(TypedDict):
     aliases: list[str]
     core_skill: str
     implicit_invocation: bool
-    runner: RunnerBinding
+    runner: RunnerPlacement
     nested_spawn_worker: bool
 
 
@@ -201,6 +210,7 @@ class GrokCoordinator:
         self.runner: str | None = None
         self.adopted_in_session = False
         self._spawns: list[SpawnHandle] = []
+        self._overnights: list[OvernightRequest] = []
 
     @classmethod
     def open(cls, token: str) -> GrokCoordinator:
@@ -254,6 +264,10 @@ class GrokCoordinator:
         advice = judge or JudgeAdvice()
         if advice.status not in {"unbound", "answered"}:
             raise ValueError(advice.status)
+        if advice.workflow not in {None, "hitl", "playbook"}:
+            raise ValueError(advice.workflow)
+        if advice.playbook is not None and not advice.playbook.strip():
+            raise ValueError("empty playbook advice")
         if explicit is not None:
             if explicit in self._policy["explicit_hitl"]:
                 return self._decision("hitl", explicit)
@@ -338,6 +352,40 @@ class GrokCoordinator:
         )
         self._spawns.append(handle)
         return handle
+
+    def overnight(
+        self,
+        *,
+        mode: Literal["until", "every"],
+        done: str | None = None,
+        interval: str | None = None,
+        prompt: str | None = None,
+    ) -> OvernightRequest:
+        """Record an overnight request. The modes stay distinct, and neither resumes after process death."""
+
+        if mode == "until":
+            if (
+                not isinstance(done, str)
+                or not done.strip()
+                or interval is not None
+                or prompt is not None
+            ):
+                raise ValueError("until carries a done condition and nothing else")
+            request = OvernightRequest(mode="until", done=done)
+        elif mode == "every":
+            if (
+                done is not None
+                or not isinstance(interval, str)
+                or not interval.strip()
+                or not isinstance(prompt, str)
+                or not prompt.strip()
+            ):
+                raise ValueError("every carries an interval and a prompt")
+            request = OvernightRequest(mode="every", interval=interval, prompt=prompt)
+        else:
+            raise ValueError(mode)
+        self._overnights.append(request)
+        return request
 
     def _included(self, name: str) -> PlaybookEntry | None:
         for item in self._policy["playbooks"]:

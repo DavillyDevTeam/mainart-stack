@@ -1,13 +1,13 @@
 ---
 name: figure-it-out
-description: Design an auditable playbook when no narrower included playbook fits. Use for a large migration, an ambitious multi-part change, or work a person reviews after stepping away.
+description: Design an auditable playbook when the user asks for a bespoke run and the what is already settled. An unsettled request stays with Matt HITL.
 ---
 
 # Figure it out
 
-When the task matches no included playbook, design one. The deliverable before any code is the workflow itself. Phases scale rigor to the task, run a hypothesis loop, and leave a decision trail a person can audit later.
+When the user explicitly asks for a bespoke run, and the what is already settled, design a playbook. The deliverable before any code is the workflow itself. Phases scale rigor to the task, run a hypothesis loop, and leave a decision trail a person can audit later.
 
-This skill runs during playbook execution. An unsettled what, a product fork, or a should-we question goes back to Matt HITL. principle-never-block-on-the-human must not suppress that clarification.
+Do not use this skill as the fallback for an unscoped request. An unscoped request without a settled what enters Matt HITL at grill-with-docs. This skill runs during playbook execution. A product fork or a should-we question also goes back to Matt HITL. principle-never-block-on-the-human must not suppress that clarification.
 
 ## Start
 

@@ -26,7 +26,8 @@ from hosts.grok.session import (
 
 ROUTER_DESCRIPTION = (
     "The mode skill that classifies an unscoped request as Matt HITL or a "
-    "pstack playbook. Explicit skills and named playbooks skip it."
+    "pstack playbook. Explicit skills and named playbooks skip it. "
+    "Canonical invocation is `mstack`; `poteto-mode` is an alias."
 )
 
 SETTLED_DEFECT = Prompt(
@@ -156,6 +157,7 @@ class RouterBoundaryTest(unittest.TestCase):
     def test_identity_tokens_and_description(self) -> None:
         session = GrokCoordinator.open("mstack")
 
+        self.assertEqual(session.token, "mstack")
         self.assertEqual(session.plugin_id, "mainart-stack")
         self.assertEqual(session.core_skill, "poteto-mode")
         self.assertEqual(session.canonical_token, "mstack")
@@ -209,6 +211,28 @@ class RouterBoundaryTest(unittest.TestCase):
         self.assertEqual(isolated.isolation, "isolated")
         self.assertEqual(isolated.model_role, "fast")
         self.assertEqual(isolated.native_type, "mainart-stack:comment-sicko")
+
+    def test_overnight_modes_stay_distinct_and_do_not_resume_after_death(self) -> None:
+        session = GrokCoordinator.open("mstack")
+
+        until = session.overnight(mode="until", done="the failing repro is confirmed")
+        every = session.overnight(
+            mode="every", interval="1h", prompt="recheck the repro"
+        )
+
+        self.assertEqual(until.mode, "until")
+        self.assertEqual(until.done, "the failing repro is confirmed")
+        self.assertIsNone(until.interval)
+        self.assertFalse(until.resumes_after_process_death)
+        self.assertEqual(every.mode, "every")
+        self.assertEqual(every.interval, "1h")
+        self.assertEqual(every.prompt, "recheck the repro")
+        self.assertIsNone(every.done)
+        self.assertFalse(every.resumes_after_process_death)
+        with self.assertRaises(ValueError):
+            session.overnight(mode="until", done="done", interval="1h")
+        with self.assertRaises(ValueError):
+            session.overnight(mode="every", interval="1h")
 
 
 if __name__ == "__main__":

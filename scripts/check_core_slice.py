@@ -63,7 +63,6 @@ REQUIRED = (
 )
 
 VENDOR_ONLY_PREFIXES = (
-    "skills/tdd/",
     "skills/setup-pstack/",
     "skills/recall/",
     "skills/reflect/",
@@ -118,19 +117,35 @@ def _notice_problems(text: str, holder: str) -> list[str]:
     return problems
 
 
+def tdd_collision_problems(core: Path, vendor: Path) -> list[str]:
+    """Packet-chain occupancy: Matt's tdd may live in core. pstack's copy may not."""
+
+    vendor_tdd = vendor / "skills" / "tdd"
+    core_tdd = core / "skills" / "tdd"
+    if not vendor_tdd.is_dir():
+        return [
+            "vendor skills/tdd is missing, so collision exclusion cannot be checked"
+        ]
+    if not core_tdd.exists():
+        return []
+    problems: list[str] = []
+    for path in sorted(core_tdd.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(core)
+        vendor_file = vendor / relative
+        if vendor_file.is_file() and path.read_bytes() == vendor_file.read_bytes():
+            problems.append(
+                f"pstack copy occupies packet-chain path: {relative.as_posix()}"
+            )
+    return problems
+
+
 def violations(root: Path) -> list[str]:
     core = root / "core"
     vendor = root / "vendor" / "pstack"
     problems: list[str] = []
-
-    if not (vendor / "skills" / "tdd").is_dir():
-        problems.append(
-            "vendor skills/tdd is missing, so collision exclusion cannot be checked"
-        )
-    if (core / "skills" / "tdd").exists():
-        problems.append(
-            "packet-chain collision: core/skills/tdd must stay Matt's copy, not pstack's"
-        )
+    problems.extend(tdd_collision_problems(core, vendor))
 
     for relative in REQUIRED:
         if not (core / relative).is_file():

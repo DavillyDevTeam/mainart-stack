@@ -1,6 +1,6 @@
 ---
 name: spawn-worker
-description: Grok binding for the spawn-worker host operation. Adopts playbook-runner in this session and rejects nested workers.
+description: Grok host-adapter shim for spawn-worker. Adopts playbook-runner in this session and rejects nested workers.
 ---
 
 # spawn-worker
@@ -11,8 +11,8 @@ Request:
 
 - role: a name from core/agents
 - prompt: the worker brief
-- isolation: isolated or same-tree. Omitted isolation means same-tree. isolated maps to a git worktree.
-- model_role: optional xhigh, max, or fast. Map that opaque role onto the host model id in host configuration.
+- isolation: isolated or same-tree. Omitted isolation means same-tree. When this shim runs on Grok, isolated maps to a git worktree.
+- model_role: optional xhigh, max, or fast. When this shim runs on Grok, map that opaque role onto the host model id in host configuration. The checked-in coordinator records the requested role and does not write that configuration.
 
 Grok rules for this path:
 
