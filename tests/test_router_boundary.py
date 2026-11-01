@@ -155,17 +155,22 @@ class RouterBoundaryTest(unittest.TestCase):
         self.assertNotIn("tdd", run.invoked_skills)
 
     def test_r10_mstack_and_poteto_mode_classify_the_same(self) -> None:
-        prompts = (
-            UNSETTLED,
-            SETTLED_DEFECT,
-            Prompt(
-                text="Export is slow.",
-                metric="Export p95 is under 300ms on the fixture set.",
-                reported_defect=True,
+        cases = (
+            (UNSETTLED, "hitl", "grill-with-docs", False),
+            (SETTLED_DEFECT, "playbook", "bug-fix", True),
+            (
+                Prompt(
+                    text="Export is slow.",
+                    metric="Export p95 is under 300ms on the fixture set.",
+                    reported_defect=True,
+                ),
+                "playbook",
+                "bug-fix",
+                True,
             ),
         )
 
-        for prompt in prompts:
+        for prompt, workflow, name, disagreed in cases:
             via_canonical = GrokCoordinator.open("mstack").route(
                 prompt, judge=JudgeAdvice(status="unbound")
             )
@@ -173,14 +178,13 @@ class RouterBoundaryTest(unittest.TestCase):
                 prompt, judge=JudgeAdvice(status="answered", workflow="hitl")
             )
             self.assertEqual(_classification(via_canonical), _classification(via_alias))
+            self.assertEqual(
+                (via_canonical.workflow, via_canonical.name), (workflow, name)
+            )
             self.assertFalse(via_canonical.judge_changed_outcome)
             self.assertFalse(via_alias.judge_changed_outcome)
-            if prompt.settled and prompt.reported_defect:
-                self.assertFalse(via_canonical.judge_disagreed)
-                self.assertTrue(via_alias.judge_disagreed)
-            else:
-                self.assertFalse(via_canonical.judge_disagreed)
-                self.assertFalse(via_alias.judge_disagreed)
+            self.assertFalse(via_canonical.judge_disagreed)
+            self.assertEqual(via_alias.judge_disagreed, disagreed)
 
     def test_identity_tokens_and_description(self) -> None:
         session = GrokCoordinator.open("mstack")

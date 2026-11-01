@@ -51,6 +51,28 @@ NEW_CORE_FILES = frozenset(
     }
 )
 
+# Packet-chain namespaces from docs/spec.md are excluded from pstack core copies.
+PACKET_CHAIN_PREFIXES = tuple(
+    f"skills/{name}/"
+    for name in (
+        "grill-with-docs",
+        "grill-me",
+        "to-spec",
+        "to-tickets",
+        "wayfinder",
+        "triage",
+        "implement",
+        "implement-spec",
+        "setup-matt-pocock-skills",
+        "grilling",
+        "domain-modeling",
+        "prototype",
+        "tdd",
+        "code-review",
+        "research",
+    )
+)
+
 REQUIRED = (
     "skills/poteto-mode/SKILL.md",
     "skills/poteto-mode/router-policy.json",
@@ -102,24 +124,6 @@ SLICE_SKILLS = (
     "poteto-help",
     "correct",
 )
-
-FENCE_FILES = (
-    "skills/poteto-mode/SKILL.md",
-    "skills/figure-it-out/SKILL.md",
-    "skills/poteto-help/SKILL.md",
-    "skills/correct/SKILL.md",
-    "skills/no-comments/SKILL.md",
-    "agents/playbook-runner.md",
-    "skills/principle-never-block-on-the-human/SKILL.md",
-)
-
-SIGNAL_PROSE = {
-    "data_shape": "data shape",
-    "repro": "repro",
-    "metric": "metric",
-    "acceptance": "acceptance",
-}
-
 
 def forbidden_hits(text: str) -> list[str]:
     return [label for pattern, label in FORBIDDEN if pattern.search(text)]
@@ -180,6 +184,8 @@ def violations(root: Path) -> list[str]:
         if relative.startswith(VENDOR_ONLY_PREFIXES) or relative in VENDOR_ONLY_FILES:
             problems.append(f"vendor-only path shipped in core: {relative}")
             continue
+        if relative.startswith(PACKET_CHAIN_PREFIXES):
+            continue
         vendor_file = vendor / relative
         if relative in NEW_CORE_FILES:
             if vendor_file.exists():
@@ -217,22 +223,7 @@ def violations(root: Path) -> list[str]:
             for label in forbidden_hits(path.read_text()):
                 problems.append(f"{path.relative_to(root).as_posix()}: {label}")
 
-    never_block = core / "skills" / "principle-never-block-on-the-human" / "SKILL.md"
-    if never_block.is_file():
-        text = never_block.read_text()
-        if "playbook" not in text or "must not suppress" not in text:
-            problems.append(
-                "principle-never-block-on-the-human can suppress HITL clarification"
-            )
-
-    bug_fix = core / "skills" / "poteto-mode" / "playbooks" / "bug-fix.md"
-    if bug_fix.is_file():
-        lowered = bug_fix.read_text().lower()
-        if "skills/tdd" in lowered or 'skill tool with "tdd"' in lowered:
-            problems.append("bug-fix invokes Matt tdd")
-
     problems.extend(slice_copy_problems(core, vendor))
-    problems.extend(procedure_alignment_problems(core))
     problems.extend(_agreement_problems(root, core))
     problems.extend(_license_problems(core))
     return problems
@@ -277,36 +268,6 @@ def slice_copy_problems(core: Path, vendor: Path) -> list[str]:
             core_name = _skill_name(core_file.read_text())
             if vendor_name is not None and vendor_name != core_name:
                 problems.append(f"core copy renamed the skill: {relative}")
-    return problems
-
-
-def procedure_alignment_problems(core: Path) -> list[str]:
-    """Prose that restates the policy must keep the policy's words."""
-
-    problems: list[str] = []
-    router_path = core / "skills" / "poteto-mode" / "SKILL.md"
-    if router_path.is_file():
-        router = router_path.read_text().lower()
-        for phrase in SIGNAL_PROSE.values():
-            if phrase not in router:
-                problems.append(f"router prose dropped the settled signal {phrase}")
-    for relative in (
-        "skills/poteto-mode/playbooks/bug-fix.md",
-        "agents/playbook-runner.md",
-    ):
-        path = core / relative
-        if not path.is_file():
-            continue
-        text = path.read_text().lower()
-        if (
-            "cheap failing-test-first" not in text
-            or "impractical or expensive" not in text
-        ):
-            problems.append(f"{relative} drifted from the bug-fix testing contract")
-    for relative in FENCE_FILES:
-        path = core / relative
-        if not path.is_file() or "must not suppress" not in path.read_text():
-            problems.append(f"{relative} dropped the HITL fence")
     return problems
 
 

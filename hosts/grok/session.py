@@ -324,7 +324,7 @@ class GrokCoordinator:
                     )
                 )
             raise UnknownInvocation(explicit)
-        if self._settled(prompt) and prompt.reported_defect and self._matches_bug_fix():
+        if prompt.settled and prompt.reported_defect and self._matches_bug_fix():
             return self._remember(
                 self._decision(
                     "playbook",
@@ -485,13 +485,6 @@ class GrokCoordinator:
             placement=_placement(isolation),
             native_isolation=_native_isolation(isolation),
             model_config_key=_model_config_key(model_role),
-        )
-
-    def _settled(self, prompt: Prompt) -> bool:
-        return any(
-            isinstance(getattr(prompt, name, None), str)
-            and bool(getattr(prompt, name).strip())
-            for name in self._policy["settled_what"]["signals"]
         )
 
     def _remember(self, decision: Decision) -> Decision:
