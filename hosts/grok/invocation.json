@@ -1,0 +1,12 @@
+{
+  "plugin_id": "mainart-stack",
+  "canonical_token": "mstack",
+  "aliases": ["poteto-mode"],
+  "core_skill": "poteto-mode",
+  "implicit_invocation": false,
+  "runner": {
+    "role": "playbook-runner",
+    "placement": "in-session"
+  },
+  "nested_spawn_worker": false
+}
