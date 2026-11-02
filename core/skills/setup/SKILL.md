@@ -32,8 +32,8 @@ Completion: the project either gained host defaults or kept its existing pins.
 Tell the human, as a checklist they run:
 
 1. Disable or uninstall a separate Matt plugin when this plugin should replace it.
-2. Remove same-named packet-chain copies from user and project skill directories when they want bare `/tdd` and `/wayfinder`.
-3. Keep a deliberate dual install through host qualification such as `/mainart-stack:tdd`.
+2. Remove same-named packet-chain copies from user and project skill directories when they want bare skill names.
+3. Keep a deliberate dual install through the selected host adapter's qualification syntax.
 
 Leave the host plugin list unread. Dual install stays an escape hatch.
 

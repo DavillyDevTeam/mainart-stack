@@ -1,17 +1,16 @@
-"""Host-agnostic first-run setup: local host, model roles, and project pins."""
+"""Host-agnostic first-run setup: local host and project pins."""
 
 from __future__ import annotations
 
 import shutil
-from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol, cast
+from typing import Literal, cast
 
 HOST_IDS = ("grok", "claude", "codex")
 HostId = Literal["grok", "claude", "codex"]
-MODEL_ROLES = ("xhigh", "max", "fast")
 HOST_GITIGNORE = ".mainart/host"
+PERSIST_MODEL_ROLES = "persist-model-roles"
 CHECKLIST = (
     "disable-or-uninstall-matt-plugin",
     "remove-duplicate-packet-chain-copies-for-bare-names",
@@ -23,12 +22,8 @@ class UnknownHost(ValueError):
     """The requested host id is outside grok, claude, and codex."""
 
 
-class ModelRolePersistence(Protocol):
-    def defaults(self) -> Mapping[str, str]:
-        """Adapter-owned host model ids for xhigh, max, and fast."""
-
-    def persist(self, mapping: Mapping[str, str]) -> Mapping[str, str]:
-        """Write the three role mappings in the host's own configuration."""
+class MissingPersistShim(FileNotFoundError):
+    """The selected host has no persist-model-roles skill directory."""
 
 
 @dataclass(frozen=True)
@@ -38,7 +33,7 @@ class SetupResult:
     pins_path: Path
     pins_initialized: bool
     pins_preserved: bool
-    model_roles: Mapping[str, str]
+    persist_skill: Path
     checklist: tuple[str, ...]
 
 
@@ -47,19 +42,16 @@ def configure(
     host_id: str,
     *,
     hosts_root: Path,
-    persist: ModelRolePersistence,
-    model_roles: Mapping[str, str] | None = None,
 ) -> SetupResult:
     if host_id not in HOST_IDS:
         raise UnknownHost(host_id)
     selected = cast(HostId, host_id)
-    resolved = _resolve_model_roles(persist, model_roles)
+    persist_skill = _require_persist_shim(hosts_root, selected)
     mainart = project / ".mainart"
     mainart.mkdir(parents=True, exist_ok=True)
     host_path = mainart / "host"
     host_path.write_text(f"{selected}\n")
     _ensure_host_gitignored(project)
-    persisted = dict(persist.persist(resolved))
     pins_path = mainart / "pins.yaml"
     pins_initialized, pins_preserved = _initialize_pins(
         pins_path, hosts_root / selected / "pins.yaml"
@@ -70,19 +62,16 @@ def configure(
         pins_path=pins_path,
         pins_initialized=pins_initialized,
         pins_preserved=pins_preserved,
-        model_roles=persisted,
+        persist_skill=persist_skill,
         checklist=CHECKLIST,
     )
 
 
-def _resolve_model_roles(
-    persist: ModelRolePersistence,
-    model_roles: Mapping[str, str] | None,
-) -> dict[str, str]:
-    resolved = dict(persist.defaults() if model_roles is None else model_roles)
-    if set(resolved) != set(MODEL_ROLES):
-        raise ValueError("model roles must be exactly xhigh, max, and fast")
-    return {role: resolved[role] for role in MODEL_ROLES}
+def _require_persist_shim(hosts_root: Path, host_id: HostId) -> Path:
+    persist_skill = hosts_root / host_id / "skills" / PERSIST_MODEL_ROLES
+    if not persist_skill.is_dir():
+        raise MissingPersistShim(str(persist_skill))
+    return persist_skill
 
 
 def _initialize_pins(project_pins: Path, host_pins: Path) -> tuple[bool, bool]:
