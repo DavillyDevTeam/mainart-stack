@@ -35,5 +35,17 @@
     "channel": "plain-chat",
     "numbered_questions": true,
     "recommendations": true
+  },
+  "setup": {
+    "skill": "setup",
+    "implicit_invocation": true,
+    "user-invocable": true
+  },
+  "shims": {
+    "user-invocable": false,
+    "implicit_invocation": false,
+    "skills": [
+      "persist-model-roles"
+    ]
   }
 }
