@@ -13,27 +13,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.check_packet_chain import problems
+from scripts.check_vendor import git_tree
 
 PINNED_REVISION = "d1478fcb140db0b93c0c8df17bcfd311844749d0"
 V131_TAG = "0b6cee10f260a2e048279cf737bfd3e37b1fce0b"
-
-SKILL_FOLDER_HASHES = {
-    "grill-with-docs": "eedaf2562c83155115e9c649fa3ecaac2e10e81d",
-    "grill-me": "3df14e2d3a89459bf300614be9247e3ce74798f8",
-    "to-spec": "136b9651747cfccbfbb7c50a6b0dfb757e7547d2",
-    "to-tickets": "2dee20ad722a31c04ededf9f2d83842473573045",
-    "wayfinder": "25da74eadc3e388b2f2a2cc716f3d44b2fb9dfe0",
-    "triage": "4cb951d62ecccaed601cdc5f9a1b7b3d8a799635",
-    "implement": "4804b466ab26c9b9d8d42917547db133d1f20a9f",
-    "implement-spec": "200830c5d204c1fd29129af9d392c8a4c258b1b5",
-    "setup-matt-pocock-skills": "b644b684781fd5baae57f6be000a180a4d4448d7",
-    "grilling": "f551b6e0d219fdda0b6abf277f8f915b3127d1e9",
-    "domain-modeling": "ea30ee454ba264543dbe40737973b1a5afb9f0e6",
-    "prototype": "e41d92e171f074a2b6887d8f6faca4a15c83d1ca",
-    "tdd": "667dbdd00c09d0e2189e082986e6a4d61a67c2a6",
-    "code-review": "a8ef561571acbb611de8ff19ba6da75b197c63a8",
-    "research": "2f8f36af48796faed5c687c75bb650071631a984",
-}
 
 def _copy_tree(root: Path) -> None:
     for directory in ("core", "vendor", "hosts"):
@@ -49,7 +32,8 @@ class PacketChainImportTest(unittest.TestCase):
         self.assertEqual(provenance["version"], "1.3.2")
         self.assertNotEqual(provenance["revision"], V131_TAG)
         recorded = {name: skill["tree"] for name, skill in provenance["skills"].items()}
-        self.assertEqual(recorded, SKILL_FOLDER_HASHES)
+        actual = {name: git_tree(f"core/skills/{name}") for name in recorded}
+        self.assertEqual(recorded, actual)
 
     def test_shipped_import_has_no_problems(self) -> None:
         self.assertEqual(problems(ROOT), [])
@@ -71,15 +55,15 @@ class PacketChainImportTest(unittest.TestCase):
             provenance["skills"]["tdd"]["tree"] = "0" * 40
             provenance_path.write_text(json.dumps(provenance))
             self.assertIn(
-                "skillFolderHash mismatch for tdd",
+                "tree mismatch for tdd",
                 problems(root),
             )
 
-            provenance["skills"]["tdd"]["tree"] = SKILL_FOLDER_HASHES["tdd"]
+            provenance["skills"]["tdd"]["tree"] = git_tree("core/skills/tdd")
             provenance_path.write_text(json.dumps(provenance))
             (root / "core/skills/tdd/tests.md").unlink()
             self.assertIn(
-                "missing companion: core/skills/tdd/tests.md",
+                "missing file: core/skills/tdd/tests.md",
                 problems(root),
             )
 

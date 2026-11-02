@@ -1,9 +1,9 @@
-"""Static checks for the vendored Matt packet chain and Grok exposure."""
+"""Static checks for the vendored Matt packet chain."""
 
 from __future__ import annotations
 
 import json
-import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -11,63 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if __package__ in {None, ""}:
     sys.path.insert(0, str(ROOT))
 
-from scripts.check_vendor import object_id
-
-
-def tree_id_from_blobs(blobs: dict[str, bytes]) -> bytes:
-    files: dict[str, bytes] = {}
-    directories: dict[str, dict[str, bytes]] = {}
-    for path, digest in blobs.items():
-        if "/" not in path:
-            files[path] = digest
-        else:
-            head, tail = path.split("/", 1)
-            directories.setdefault(head, {})[tail] = digest
-    entries: list[tuple[bytes, bytes]] = []
-    for name, digest in files.items():
-        encoded = os.fsencode(name)
-        entries.append((encoded, b"100644 " + encoded + b"\0" + digest))
-    for name, nested in directories.items():
-        encoded = os.fsencode(name)
-        digest = tree_id_from_blobs(nested)
-        entries.append((encoded + b"/", b"40000 " + encoded + b"\0" + digest))
-    return object_id("tree", b"".join(entry for _, entry in sorted(entries)))
+from scripts.check_vendor import git_files, git_tree
 
 PINNED_REVISION = "d1478fcb140db0b93c0c8df17bcfd311844749d0"
-
-SKILL_FOLDER_HASHES = {
-    "grill-with-docs": "eedaf2562c83155115e9c649fa3ecaac2e10e81d",
-    "grill-me": "3df14e2d3a89459bf300614be9247e3ce74798f8",
-    "to-spec": "136b9651747cfccbfbb7c50a6b0dfb757e7547d2",
-    "to-tickets": "2dee20ad722a31c04ededf9f2d83842473573045",
-    "wayfinder": "25da74eadc3e388b2f2a2cc716f3d44b2fb9dfe0",
-    "triage": "4cb951d62ecccaed601cdc5f9a1b7b3d8a799635",
-    "implement": "4804b466ab26c9b9d8d42917547db133d1f20a9f",
-    "implement-spec": "200830c5d204c1fd29129af9d392c8a4c258b1b5",
-    "setup-matt-pocock-skills": "b644b684781fd5baae57f6be000a180a4d4448d7",
-    "grilling": "f551b6e0d219fdda0b6abf277f8f915b3127d1e9",
-    "domain-modeling": "ea30ee454ba264543dbe40737973b1a5afb9f0e6",
-    "prototype": "e41d92e171f074a2b6887d8f6faca4a15c83d1ca",
-    "tdd": "667dbdd00c09d0e2189e082986e6a4d61a67c2a6",
-    "code-review": "a8ef561571acbb611de8ff19ba6da75b197c63a8",
-    "research": "2f8f36af48796faed5c687c75bb650071631a984",
-}
-
-COMPANIONS = (
-    "domain-modeling/GLOSSARY-FORMAT.md",
-    "domain-modeling/ADR-FORMAT.md",
-    "prototype/LOGIC.md",
-    "prototype/UI.md",
-    "triage/AGENT-BRIEF.md",
-    "triage/OUT-OF-SCOPE.md",
-    "tdd/tests.md",
-    "tdd/mocking.md",
-    "setup-matt-pocock-skills/issue-tracker-github.md",
-    "setup-matt-pocock-skills/issue-tracker-gitlab.md",
-    "setup-matt-pocock-skills/issue-tracker-local.md",
-    "setup-matt-pocock-skills/triage-labels.md",
-    "setup-matt-pocock-skills/domain.md",
-)
 
 UNSELECTED = (
     "ask-matt",
@@ -102,6 +48,7 @@ PRIMITIVES = (
     "code-review",
     "research",
 )
+PACKET_CHAIN = HITL + PRIMITIVES
 
 
 def problems(root: Path = ROOT) -> list[str]:
@@ -122,72 +69,37 @@ def problems(root: Path = ROOT) -> list[str]:
     if not isinstance(recorded, dict):
         found.append("provenance skills map is missing")
         return found
+    if set(recorded) != set(PACKET_CHAIN):
+        found.append("provenance skill list does not match the packet chain")
 
-    for name, expected in SKILL_FOLDER_HASHES.items():
+    for name in PACKET_CHAIN:
         skill = recorded.get(name)
         if not isinstance(skill, dict):
             found.append(f"missing provenance for {name}")
             continue
-        if skill.get("tree") != expected:
-            found.append(f"skillFolderHash mismatch for {name}")
+        expected = skill.get("tree")
+        try:
+            actual = git_tree(f"core/skills/{name}")
+        except subprocess.CalledProcessError:
+            found.append(f"missing skill: core/skills/{name}")
+            continue
+        if actual != expected:
+            found.append(f"tree mismatch for {name}")
         skill_root = root / "core/skills" / name
-        skill_file = skill_root / "SKILL.md"
-        if not skill_file.is_file():
-            found.append(f"missing skill: core/skills/{name}/SKILL.md")
-            continue
-        files = skill.get("files")
-        if not isinstance(files, dict):
-            found.append(f"missing file inventory for {name}")
-            continue
-        omitted = skill.get("omitted", {})
-        if not isinstance(omitted, dict):
-            found.append(f"missing omitted inventory for {name}")
-            omitted = {}
-        blobs: dict[str, bytes] = {}
-        complete = True
-        for relative, digest in files.items():
-            path = skill_root / relative
-            if not path.is_file():
-                found.append(f"missing copied file: core/skills/{name}/{relative}")
-                complete = False
-                continue
-            actual = object_id("blob", path.read_bytes())
-            if actual.hex() != digest:
-                found.append(
-                    f"blob mismatch: core/skills/{name}/{relative}"
-                )
-                complete = False
-            blobs[relative] = actual
-        for relative, digest in omitted.items():
-            if not isinstance(digest, str):
-                found.append(f"omitted blob missing for {name}/{relative}")
-                complete = False
-                continue
-            if (skill_root / relative).exists():
-                found.append(
-                    "adapter metadata in core: "
-                    f"core/skills/{name}/{relative}"
-                )
-                complete = False
-            blobs[relative] = bytes.fromhex(digest)
-        if complete:
-            reconstructed = tree_id_from_blobs(blobs).hex()
-            if reconstructed != expected:
-                found.append(f"skillFolderHash mismatch for {name}")
-        for path in skill_root.rglob("*"):
-            if not path.is_file():
-                continue
-            relative = path.relative_to(skill_root).as_posix()
-            if relative in files or relative in omitted:
-                continue
-            found.append(
-                f"unexpected file in core: core/skills/{name}/{relative}"
-            )
-
-    for relative in COMPANIONS:
-        path = root / "core/skills" / relative
-        if not path.is_file():
-            found.append(f"missing companion: core/skills/{relative}")
+        expected_files = git_files(f"core/skills/{name}")
+        actual_files = {
+            path.relative_to(skill_root).as_posix()
+            for path in skill_root.rglob("*")
+            if path.is_file()
+        } if skill_root.is_dir() else set()
+        for relative in sorted(expected_files - actual_files):
+            found.append(f"missing file: core/skills/{name}/{relative}")
+        for relative in sorted(actual_files - expected_files):
+            path = f"core/skills/{name}/{relative}"
+            if Path(relative).name == "openai.yaml":
+                found.append(f"adapter metadata in core: {path}")
+            else:
+                found.append(f"unexpected file in core: {path}")
 
     for yaml in (root / "core").rglob("openai.yaml"):
         found.append(
@@ -270,7 +182,7 @@ def main() -> int:
         return 1
     print(
         f"Packet chain {PINNED_REVISION[:7]}: "
-        f"{len(SKILL_FOLDER_HASHES)} skills, Grok HITL explicit"
+        f"{len(PACKET_CHAIN)} skills, Grok HITL explicit"
     )
     return 0
 

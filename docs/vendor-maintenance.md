@@ -44,13 +44,10 @@ database: reproduce it from the pinned upstream revision when needed.
 python3 scripts/check_vendor.py
 ```
 
-This offline, standard-library-only check reconstructs the Git tree ID from the
-working files, independently of the index and local Git objects. It detects
-modified, added (including ignored/untracked), deleted, renamed, or executable-bit
-changed files and symlink target changes. Empty directories are also rejected;
-Git does not normally preserve them. Non-executable permission bits and timestamps
-are not Git content. Run the command from any working directory with Python 3.10+.
-The CI workflow runs the same check on pushes and pull requests.
+The check is `git rev-parse HEAD:vendor/pstack` compared with the `tree`
+field in provenance. Git computes the tree ID; this script does not
+reimplement hashing. Run it from a checkout of this repository. The CI
+workflow runs the same check on pushes and pull requests.
 
 The provenance record is the trust anchor: review any change to it against the
 pinned research and upstream before accepting a new snapshot. Changing both the

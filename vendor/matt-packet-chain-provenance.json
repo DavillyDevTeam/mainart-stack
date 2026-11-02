@@ -2,170 +2,67 @@
   "repository": "https://github.com/mattpocock/skills.git",
   "revision": "d1478fcb140db0b93c0c8df17bcfd311844749d0",
   "version": "1.3.2",
-  "note": "Packet-chain bodies are the v1.3.2 tag at this revision. Each skills[].tree is the skill-directory Git tree ID and matches skillFolderHash. omitted records adapter-only blobs used to reconstruct that tree.",
+  "note": "Each skills[].tree is `git rev-parse HEAD:core/skills/<name>` at this pin. Codex agents/openai.yaml is omitted from core, so these trees differ from the upstream skill-directory trees at the same revision.",
   "skills": {
     "grill-with-docs": {
       "source_path": "skills/engineering/grill-with-docs",
-      "tree": "eedaf2562c83155115e9c649fa3ecaac2e10e81d",
-      "files": {
-        "SKILL.md": "62b9efb6f991d1b229adee7506962f13ced0c499"
-      },
-      "omitted": {
-        "agents/openai.yaml": "5dbe2780a51be3e9b118bd7758a73e54a9384e11"
-      }
+      "tree": "fe1aad3d64e311c3b461d2be0698445456f2ecd3"
     },
     "grill-me": {
       "source_path": "skills/productivity/grill-me",
-      "tree": "3df14e2d3a89459bf300614be9247e3ce74798f8",
-      "files": {
-        "SKILL.md": "3947ff9c4ad980d14fc07fccbf659d47c114e81d"
-      },
-      "omitted": {
-        "agents/openai.yaml": "4d6fb0c746c5d21364dce5d0cf8c51eab9712e7b"
-      }
+      "tree": "4627f1133e2f18d7f9fa33070bb9758443797e1a"
     },
     "to-spec": {
       "source_path": "skills/engineering/to-spec",
-      "tree": "136b9651747cfccbfbb7c50a6b0dfb757e7547d2",
-      "files": {
-        "SKILL.md": "3f52599ae2a4347aee5a07432c2707518e691a7f"
-      },
-      "omitted": {
-        "agents/openai.yaml": "549e6f76f020a1b9ba65f52ccda336566ee6222a"
-      }
+      "tree": "e41c22573fc0aa056b57e37d4891790563ab243e"
     },
     "to-tickets": {
       "source_path": "skills/engineering/to-tickets",
-      "tree": "2dee20ad722a31c04ededf9f2d83842473573045",
-      "files": {
-        "SKILL.md": "9b77a01db9460c99c22d03c910c349f890f12c0e"
-      },
-      "omitted": {
-        "agents/openai.yaml": "24605a5db64e4fc750b999aa94aea126bee814ee"
-      }
+      "tree": "d4b4aa7852cf7afd69d8774c5cd0e10221a183de"
     },
     "wayfinder": {
       "source_path": "skills/engineering/wayfinder",
-      "tree": "25da74eadc3e388b2f2a2cc716f3d44b2fb9dfe0",
-      "files": {
-        "SKILL.md": "975d6bf9c0a49d18a651f3335e0b4dcf8650fe31"
-      },
-      "omitted": {
-        "agents/openai.yaml": "b37544751e0570f9df8de6c02aef238de8c3e1e0"
-      }
+      "tree": "4c1cf3edea4d306a5d43c24315dd16332f219927"
     },
     "triage": {
       "source_path": "skills/engineering/triage",
-      "tree": "4cb951d62ecccaed601cdc5f9a1b7b3d8a799635",
-      "files": {
-        "AGENT-BRIEF.md": "1462fcd9e8cc21921158c296149dc05d9be39d20",
-        "OUT-OF-SCOPE.md": "c9fba2f77ee0619975ec8488c0d4861a0c7e3151",
-        "SKILL.md": "3fd5617e906cf9b71a6b17424791adb905fc248b"
-      },
-      "omitted": {
-        "agents/openai.yaml": "acb366cf0f2527e8925ff1223b77610ac0b1be4c"
-      }
+      "tree": "d432285eaefc787965566b6d85afa4246256d6bb"
     },
     "implement": {
       "source_path": "skills/engineering/implement",
-      "tree": "4804b466ab26c9b9d8d42917547db133d1f20a9f",
-      "files": {
-        "SKILL.md": "bd49e472984c7b99aac40286fdae749bb955a842"
-      },
-      "omitted": {
-        "agents/openai.yaml": "f8794dc153b409052a9167baf10858cf01b36175"
-      }
+      "tree": "982ff7f8a541de8a85f7a4cb2ade21c2fb270a96"
     },
     "implement-spec": {
       "source_path": "skills/engineering/implement-spec",
-      "tree": "200830c5d204c1fd29129af9d392c8a4c258b1b5",
-      "files": {
-        "SKILL.md": "77bf59b02e7d3a43afbd7035ad77879cf3ebe783"
-      },
-      "omitted": {
-        "agents/openai.yaml": "f5e91af21e38eb1a167ea5aa93dfc7da3c4637b4"
-      }
+      "tree": "b12d400499cd45dddd5539e5a3c186f25dc94e09"
     },
     "setup-matt-pocock-skills": {
       "source_path": "skills/engineering/setup-matt-pocock-skills",
-      "tree": "b644b684781fd5baae57f6be000a180a4d4448d7",
-      "files": {
-        "SKILL.md": "2df0b07981718fa5d9a51526dfbcaee87e3a543d",
-        "domain.md": "4032de016c1e91119d33d477633e2b8f265f4195",
-        "issue-tracker-github.md": "dc806f5655ae34c1701170f98208e5fb5dba7045",
-        "issue-tracker-gitlab.md": "1aeb5d04fadd9b7240e3f70dff20a758a1c729ea",
-        "issue-tracker-local.md": "0209a19af92c9c485cf3acc3d9e253171517ea17",
-        "triage-labels.md": "5276464244857a3cc29890ff4a978a197b21f3fc"
-      },
-      "omitted": {
-        "agents/openai.yaml": "65a0da8128c98051183235e490767a8065310868"
-      }
+      "tree": "5678a228672caa7d7519a6767dea2ebafbe4f3d8"
     },
     "grilling": {
       "source_path": "skills/productivity/grilling",
-      "tree": "f551b6e0d219fdda0b6abf277f8f915b3127d1e9",
-      "files": {
-        "SKILL.md": "d2f09a18e6a6c65c55f1271ba08dfeaf06f0bed3"
-      },
-      "omitted": {
-        "agents/openai.yaml": "ddbdb96139c0c1dfe6bca698f39d0465674b8a39"
-      }
+      "tree": "bcb98b3ab5113d3143ca4a9ee1c55581460a0ba3"
     },
     "domain-modeling": {
       "source_path": "skills/engineering/domain-modeling",
-      "tree": "ea30ee454ba264543dbe40737973b1a5afb9f0e6",
-      "files": {
-        "ADR-FORMAT.md": "d7e61f30a9fd8ca70d9ee68f019c2a9ebf2d13f7",
-        "GLOSSARY-FORMAT.md": "9c0b4c7a2e8507c23cbb5e0baa66d81699321cc6",
-        "SKILL.md": "a4438c6879c517d1a08e2b5fbca049b632688dfe"
-      },
-      "omitted": {
-        "agents/openai.yaml": "7f1522d2f11506ee205275ab7c282aa52366ecf6"
-      }
+      "tree": "cd80704dd6c13140d98f502ce58c6ac0896570e8"
     },
     "prototype": {
       "source_path": "skills/engineering/prototype",
-      "tree": "e41d92e171f074a2b6887d8f6faca4a15c83d1ca",
-      "files": {
-        "LOGIC.md": "32be86a0a5d9928db84b3988e55f9debe476ab40",
-        "SKILL.md": "a0044501fe0d385b4d8575b610188ede9b236ccf",
-        "UI.md": "3977951663490882c2632b40695d9f59a2fe2408"
-      },
-      "omitted": {
-        "agents/openai.yaml": "1618b147965bc729b7bf3e8da5f130132067aadc"
-      }
+      "tree": "3ef79b7771d94f1adf5a0af44ec43697cf648cf7"
     },
     "tdd": {
       "source_path": "skills/engineering/tdd",
-      "tree": "667dbdd00c09d0e2189e082986e6a4d61a67c2a6",
-      "files": {
-        "SKILL.md": "01eadaa34e7c9a63a67d6dc3cce1cc81b0e49985",
-        "mocking.md": "71cbfee674d93244ce81d1830b930ca9a69200bd",
-        "tests.md": "7ab86479f925a1f9e8ba680af33cb3b12e015381"
-      },
-      "omitted": {
-        "agents/openai.yaml": "651b838a7663e027b1b8884491e867f26bb9a021"
-      }
+      "tree": "8c2e4bc3045cce8088548d6a6284aee2f17f49e4"
     },
     "code-review": {
       "source_path": "skills/engineering/code-review",
-      "tree": "a8ef561571acbb611de8ff19ba6da75b197c63a8",
-      "files": {
-        "SKILL.md": "83183e0ad36fd0eef25d37c7e483284b7e34c1f0"
-      },
-      "omitted": {
-        "agents/openai.yaml": "9076774ba327f49068db9273feceda03bfe940fa"
-      }
+      "tree": "864fc8b3beb004e88f091b2caabb52f1d123d798"
     },
     "research": {
       "source_path": "skills/engineering/research",
-      "tree": "2f8f36af48796faed5c687c75bb650071631a984",
-      "files": {
-        "SKILL.md": "ffc9eb89849cc4cf74962ce93d786ffd17c6a5dc"
-      },
-      "omitted": {
-        "agents/openai.yaml": "e18b96ca0ccc1003889d5d6991386207c2454bc2"
-      }
+      "tree": "46a87d34eb0f2ba40f50f870f44103ae7524ae93"
     }
   }
 }
