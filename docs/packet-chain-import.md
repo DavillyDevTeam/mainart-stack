@@ -1,12 +1,11 @@
 # Packet-chain import
 
 Issue #23 vendors the fifteen Matt packet-chain skills into `core/skills/`
-from `mattpocock/skills@b645f47de3e17ed3bf60586c9bebb8092e0f79fd`.
+from `mattpocock/skills@d1478fcb140db0b93c0c8df17bcfd311844749d0` (`v1.3.2`).
 The machine-readable record is [matt-packet-chain-provenance.json](../vendor/matt-packet-chain-provenance.json).
 Each `tree` value is the skill-directory Git tree ID and matches the
-`skillFolderHash` inventory from the 2026-10-07 installation lock.
-Do not substitute the `v1.3.1` tag; that tag differs for `to-tickets`,
-`implement`, and `setup-matt-pocock-skills`.
+upstream skill-directory Git tree at that tag. Do not substitute a newer
+`main` commit; `v1.3.2` is the latest stable release.
 
 Copied procedure files keep Matt's bodies, including companions and tracker
 templates under `setup-matt-pocock-skills/`. Tracker mechanics stay in those

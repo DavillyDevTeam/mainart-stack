@@ -33,24 +33,24 @@ def tree_id_from_blobs(blobs: dict[str, bytes]) -> bytes:
         entries.append((encoded + b"/", b"40000 " + encoded + b"\0" + digest))
     return object_id("tree", b"".join(entry for _, entry in sorted(entries)))
 
-PINNED_REVISION = "b645f47de3e17ed3bf60586c9bebb8092e0f79fd"
+PINNED_REVISION = "d1478fcb140db0b93c0c8df17bcfd311844749d0"
 
 SKILL_FOLDER_HASHES = {
     "grill-with-docs": "eedaf2562c83155115e9c649fa3ecaac2e10e81d",
     "grill-me": "3df14e2d3a89459bf300614be9247e3ce74798f8",
     "to-spec": "136b9651747cfccbfbb7c50a6b0dfb757e7547d2",
     "to-tickets": "2dee20ad722a31c04ededf9f2d83842473573045",
-    "wayfinder": "8ec0462658381bd1606d3f9db14ffc67df6a2a43",
+    "wayfinder": "25da74eadc3e388b2f2a2cc716f3d44b2fb9dfe0",
     "triage": "4cb951d62ecccaed601cdc5f9a1b7b3d8a799635",
-    "implement": "27a09574c533d4b9a66c7b2b43cdfeeeb9f415b5",
-    "implement-spec": "0cfefc751d0cb64f0c948ffcb17e13b94e778f08",
-    "setup-matt-pocock-skills": "0b280474a635c9c0efc2bcb2665c87163851bf14",
-    "grilling": "f0732035b8b1b60ae39454e4191caef32fa91903",
+    "implement": "4804b466ab26c9b9d8d42917547db133d1f20a9f",
+    "implement-spec": "200830c5d204c1fd29129af9d392c8a4c258b1b5",
+    "setup-matt-pocock-skills": "b644b684781fd5baae57f6be000a180a4d4448d7",
+    "grilling": "f551b6e0d219fdda0b6abf277f8f915b3127d1e9",
     "domain-modeling": "ea30ee454ba264543dbe40737973b1a5afb9f0e6",
     "prototype": "e41d92e171f074a2b6887d8f6faca4a15c83d1ca",
-    "tdd": "bf1bf5ffcd63aa8abce830f2955a853c121fb463",
-    "code-review": "d8e341cee7980127dddda05159bedf25dc853615",
-    "research": "0a6796c5667e95ed2301ba7381c123b4acb2ae1a",
+    "tdd": "667dbdd00c09d0e2189e082986e6a4d61a67c2a6",
+    "code-review": "a8ef561571acbb611de8ff19ba6da75b197c63a8",
+    "research": "2f8f36af48796faed5c687c75bb650071631a984",
 }
 
 COMPANIONS = (
