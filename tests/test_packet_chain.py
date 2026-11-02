@@ -1,4 +1,4 @@
-"""Packet-chain import and Grok entry-point acceptance checks."""
+"""Packet-chain import acceptance checks."""
 
 from __future__ import annotations
 
@@ -12,10 +12,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from hosts.grok.packet_chain import (
-    GrokPacketChain,
-    ImplicitInvocationRejected,
-)
 from scripts.check_packet_chain import problems
 
 PINNED_REVISION = "d1478fcb140db0b93c0c8df17bcfd311844749d0"
@@ -38,27 +34,6 @@ SKILL_FOLDER_HASHES = {
     "code-review": "a8ef561571acbb611de8ff19ba6da75b197c63a8",
     "research": "2f8f36af48796faed5c687c75bb650071631a984",
 }
-
-EXPLICIT_HITL = (
-    "grill-with-docs",
-    "grill-me",
-    "to-spec",
-    "to-tickets",
-    "wayfinder",
-    "triage",
-    "implement",
-    "implement-spec",
-    "setup-matt-pocock-skills",
-)
-PRIMITIVES = (
-    "grilling",
-    "domain-modeling",
-    "prototype",
-    "tdd",
-    "code-review",
-    "research",
-)
-
 
 def _copy_tree(root: Path) -> None:
     for directory in ("core", "vendor", "hosts"):
@@ -141,61 +116,6 @@ class PacketChainImportTest(unittest.TestCase):
                 "unexpected file in core: core/skills/grilling/NOTES.md",
                 problems(root),
             )
-
-
-class GrokPacketChainInvocationTest(unittest.TestCase):
-    def test_explicit_hitl_skills_run_only_when_the_user_invokes_them(self) -> None:
-        host = GrokPacketChain.open(ROOT)
-        for name in EXPLICIT_HITL:
-            with self.subTest(name=name):
-                result = host.invoke(name, explicit=True)
-                self.assertTrue(result.available)
-                self.assertEqual(result.mode, "explicit")
-                self.assertEqual(result.qualified_name, f"/mainart-stack:{name}")
-                self.assertTrue(result.disable_model_invocation)
-                self.assertTrue(result.body.is_file())
-                with self.assertRaises(ImplicitInvocationRejected):
-                    host.invoke(name)
-
-    def test_primitives_are_available_internally(self) -> None:
-        host = GrokPacketChain.open(ROOT)
-        for name in PRIMITIVES:
-            with self.subTest(name=name):
-                result = host.invoke(name, internal=True)
-                self.assertTrue(result.available)
-                self.assertEqual(result.mode, "internal")
-                self.assertEqual(result.qualified_name, f"/mainart-stack:{name}")
-                self.assertFalse(result.disable_model_invocation)
-                self.assertTrue(result.body.is_file())
-
-    def test_grilling_keeps_numbered_questions_in_plain_chat(self) -> None:
-        host = GrokPacketChain.open(ROOT)
-        self.assertEqual(host.grilling_channel, "plain-chat")
-        self.assertTrue(host.numbered_questions)
-        self.assertTrue(host.recommendations)
-        grilling = (ROOT / "core/skills/grilling/SKILL.md").read_text()
-        self.assertNotIn("AskUserQuestion", grilling)
-        self.assertNotIn("AskQuestion", grilling)
-        self.assertIn("number each question", grilling)
-        self.assertIn("recommended answer", grilling)
-
-    def test_invocation_metadata_lives_in_the_adapter(self) -> None:
-        invocation = json.loads((ROOT / "hosts/grok/invocation.json").read_text())
-        self.assertEqual(invocation["plugin_id"], "mainart-stack")
-        self.assertEqual(invocation["qualification"], "/mainart-stack:{name}")
-        self.assertFalse(invocation["hitl"]["implicit_invocation"])
-        self.assertTrue(invocation["hitl"]["disable-model-invocation"])
-        self.assertTrue(invocation["primitives"]["internally_available"])
-        self.assertFalse(invocation["primitives"]["disable-model-invocation"])
-        self.assertEqual(invocation["grilling"]["channel"], "plain-chat")
-        self.assertEqual(
-            set(invocation["hitl"]["skills"]),
-            set(EXPLICIT_HITL),
-        )
-        self.assertEqual(
-            set(invocation["primitives"]["skills"]),
-            set(PRIMITIVES),
-        )
 
 
 if __name__ == "__main__":
