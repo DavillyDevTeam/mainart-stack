@@ -1,0 +1,39 @@
+{
+  "plugin_id": "mainart-stack",
+  "qualification": "/mainart-stack:{name}",
+  "core_root": "core/skills",
+  "hitl": {
+    "implicit_invocation": false,
+    "disable-model-invocation": true,
+    "user-invocable": true,
+    "skills": [
+      "grill-with-docs",
+      "grill-me",
+      "to-spec",
+      "to-tickets",
+      "wayfinder",
+      "triage",
+      "implement",
+      "implement-spec",
+      "setup-matt-pocock-skills"
+    ]
+  },
+  "primitives": {
+    "internally_available": true,
+    "disable-model-invocation": false,
+    "user-invocable": false,
+    "skills": [
+      "grilling",
+      "domain-modeling",
+      "prototype",
+      "tdd",
+      "code-review",
+      "research"
+    ]
+  },
+  "grilling": {
+    "channel": "plain-chat",
+    "numbered_questions": true,
+    "recommendations": true
+  }
+}

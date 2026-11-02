@@ -1,11 +1,11 @@
 {
   "repository": "https://github.com/cursor/plugins.git",
-  "revision": "1b6d44ff26d4e242f4e8f68c391e6d2f7ca16def",
+  "revision": "ae5650febf4320793844c12c4adaa937f417f8da",
   "prefix": "pstack",
-  "version": "0.15.20",
-  "tree": "1dbec20ada6e40cb12774b8893960a558319fd6b",
-  "split": "24329adf5b1f1a1fe6cadac75553b9cb8809d991",
-  "split_command": "git subtree split --prefix=pstack 1b6d44ff26d4e242f4e8f68c391e6d2f7ca16def",
+  "version": "0.15.36",
+  "tree": "4719e1c4b4c43bac85d4206a8b41dd2899769c1c",
+  "split": "bd105d05e448baf37841e3978dd8f4c88dd95626",
+  "split_command": "git commit-tree $(git rev-parse ae5650febf4320793844c12c4adaa937f417f8da:pstack) -m 'pstack 0.15.36 from ae5650febf4320793844c12c4adaa937f417f8da'",
   "git_version": "2.56.0",
   "destination": "vendor/pstack",
   "squash": true

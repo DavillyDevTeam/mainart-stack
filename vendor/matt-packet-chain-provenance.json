@@ -1,0 +1,68 @@
+{
+  "repository": "https://github.com/mattpocock/skills.git",
+  "revision": "d1478fcb140db0b93c0c8df17bcfd311844749d0",
+  "version": "1.3.2",
+  "note": "Each skills[].tree is `git rev-parse HEAD:core/skills/<name>` at this pin. Codex agents/openai.yaml is omitted from core, so these trees differ from the upstream skill-directory trees at the same revision.",
+  "skills": {
+    "grill-with-docs": {
+      "source_path": "skills/engineering/grill-with-docs",
+      "tree": "fe1aad3d64e311c3b461d2be0698445456f2ecd3"
+    },
+    "grill-me": {
+      "source_path": "skills/productivity/grill-me",
+      "tree": "4627f1133e2f18d7f9fa33070bb9758443797e1a"
+    },
+    "to-spec": {
+      "source_path": "skills/engineering/to-spec",
+      "tree": "e41c22573fc0aa056b57e37d4891790563ab243e"
+    },
+    "to-tickets": {
+      "source_path": "skills/engineering/to-tickets",
+      "tree": "d4b4aa7852cf7afd69d8774c5cd0e10221a183de"
+    },
+    "wayfinder": {
+      "source_path": "skills/engineering/wayfinder",
+      "tree": "4c1cf3edea4d306a5d43c24315dd16332f219927"
+    },
+    "triage": {
+      "source_path": "skills/engineering/triage",
+      "tree": "d432285eaefc787965566b6d85afa4246256d6bb"
+    },
+    "implement": {
+      "source_path": "skills/engineering/implement",
+      "tree": "982ff7f8a541de8a85f7a4cb2ade21c2fb270a96"
+    },
+    "implement-spec": {
+      "source_path": "skills/engineering/implement-spec",
+      "tree": "b12d400499cd45dddd5539e5a3c186f25dc94e09"
+    },
+    "setup-matt-pocock-skills": {
+      "source_path": "skills/engineering/setup-matt-pocock-skills",
+      "tree": "5678a228672caa7d7519a6767dea2ebafbe4f3d8"
+    },
+    "grilling": {
+      "source_path": "skills/productivity/grilling",
+      "tree": "bcb98b3ab5113d3143ca4a9ee1c55581460a0ba3"
+    },
+    "domain-modeling": {
+      "source_path": "skills/engineering/domain-modeling",
+      "tree": "cd80704dd6c13140d98f502ce58c6ac0896570e8"
+    },
+    "prototype": {
+      "source_path": "skills/engineering/prototype",
+      "tree": "3ef79b7771d94f1adf5a0af44ec43697cf648cf7"
+    },
+    "tdd": {
+      "source_path": "skills/engineering/tdd",
+      "tree": "8c2e4bc3045cce8088548d6a6284aee2f17f49e4"
+    },
+    "code-review": {
+      "source_path": "skills/engineering/code-review",
+      "tree": "864fc8b3beb004e88f091b2caabb52f1d123d798"
+    },
+    "research": {
+      "source_path": "skills/engineering/research",
+      "tree": "46a87d34eb0f2ba40f50f870f44103ae7524ae93"
+    }
+  }
+}

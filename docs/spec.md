@@ -34,8 +34,8 @@ Required host operations are runtime obligations. Optional capabilities cannot r
 
 Use the agreed snapshots from [Inventory upstream pstack](research/pstack-inventory.md) and [Inventory Matt packet-chain skills](research/matt-packet-chain.md):
 
-- pstack 0.15.20 at `cursor/plugins@1b6d44ff`, MIT, Copyright (c) 2026 Lauren Tan.
-- Matt Pocock's skills: the inventory reports v1.3.1 metadata, while its installed packet-chain bodies are pinned to `mattpocock/skills@b645f47de3e17ed3bf60586c9bebb8092e0f79fd`, MIT, Copyright (c) 2026 Matt Pocock. Local verification matched all fifteen selected skill-directory Git tree hashes at this revision to the recorded `skillFolderHash` values in the installation lock updated 2026-10-07. Use this revision to reproduce the inventoried bodies. The v1.3.1 tag differs for `to-tickets`, `implement`, and `setup-matt-pocock-skills`; do not substitute the release tag or a newer installed checkout. Record the revision and selected directory tree hashes with the eventual import.
+- pstack 0.15.36 at `cursor/plugins@ae5650fe`, MIT, Copyright (c) 2026 Lauren Tan. The living pin is [pstack-provenance.json](../vendor/pstack-provenance.json).
+- Matt Pocock's skills v1.3.2 at `mattpocock/skills@d1478fcb140db0b93c0c8df17bcfd311844749d0`, MIT, Copyright (c) 2026 Matt Pocock. The living pin and selected skill-directory Git tree hashes are [matt-packet-chain-provenance.json](../vendor/matt-packet-chain-provenance.json). Do not substitute a newer `main` commit for this release tag.
 
 Preserve both upstream copyright and full MIT permission notices with substantial core copies. Keep `vendor/pstack/LICENSE` intact. mainart-stack is the product name; do not brand the product as pstack.
 
